@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'mosquito_test.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
+        'NAME': 'mydb',
         'USER': 'postgres',
         'PASSWORD': 'aa604aa',
         'HOST': '127.0.0.1',

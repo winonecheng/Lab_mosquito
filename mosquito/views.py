@@ -11,11 +11,22 @@ from .models import User
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
      
+def create_row_in_db(id):
+    user = User(uid=id)
+    user.save()
 
-def upload_to_db(str):
-	user = User(location=str)
-	user.save()
-	return 0
+def update_user_data(id, data):
+    user = User.objects.filter(uid=id).reverse()[0]
+    if user.state == 0:
+        user.temperature = data
+        user.state = 1
+        user.save()
+    elif user.state == 1:
+        user.address = data
+        user.state = 2
+        user.save()
+    else:
+        print("update data error!!")
 
 @csrf_exempt
 def callback(request):
@@ -33,21 +44,34 @@ def callback(request):
         for event in events:
             if isinstance(event, MessageEvent):
                 if isinstance(event.message, TextMessage):
-                	profile = line_bot_api.get_profile(event.source.user_id)
-                	reply_text = ""
-                	if "回報" in event.message.text:
-                		print(profile.user_id+"要回報")
-                		reply_text = "嗨，"+profile.display_name+"\n請問你現在的體溫?"
+                    profile = line_bot_api.get_profile(event.source.user_id)
+                    reply_text = ""
 
-	                if "體溫" in event.message.text:
-	                	print(profile.user_id+"輸入體溫")
-	                	reply_text = "請問你的所在地?"
+                    if "回報" in event.message.text:
+                        print(profile.user_id+"要回報")
+                        create_row_in_db(profile.user_id)
+                        reply_text = "嗨，"+profile.display_name+"\n請問你現在的體溫?"
 
-	                if "地點" in event.message.text:
-	                	print(profile.user_id+"輸入地點")
-	                	reply_text = "回報成功！"
+                    else:
+                        state = -1
+                        try:
+                            state = User.objects.filter(uid=profile.user_id).reverse()[0].state
+                            
+                        except:
+                            reply_text = "嗨，"+profile.display_name+"\n你要回報嗎?"
 
-                	line_bot_api.reply_message(
+                        if state == 0:
+                            print(profile.user_id+"輸入體溫")
+                            update_user_data(profile.user_id, event.message.text)
+                            reply_text = "請問你的所在地?"
+                        elif state == 1:
+                            print(profile.user_id+"輸入地點")
+                            update_user_data(profile.user_id, event.message.text)
+                            reply_text = "回報成功！"
+                        elif state == 2:
+                        	reply_text = "你要再次回報嗎?"
+
+                    line_bot_api.reply_message(
                         event.reply_token,
                         TextSendMessage(text=reply_text)
                     )
