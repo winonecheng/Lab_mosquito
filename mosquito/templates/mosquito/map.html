@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>report map</title>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+
+	<style type="text/css">
+		#mapid { height: 180px; }
+	</style>
+
+</head>
+
+<body>
+<div id="mapid"></div>
+
+<script type="text/javascript">
+	var mymap = L.map('mapid').setView([51.505, -0.09], 13);
+	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+	    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+	    maxZoom: 18,
+	    id: 'mapbox.streets',
+	    accessToken: 'pk.eyJ1Ijoiam9ubmUyNjAiLCJhIjoiY2owOWFrbHA4MDgyMTJ3cGR3cWVlMm51eiJ9.ezHTsyL9D3-O5Anw6IGRdg'
+	}).addTo(mymap);
+	var marker = L.marker([51.5, -0.09]).addTo(mymap);
+	var circle = L.circle([51.508, -0.11], {
+	    color: 'red',
+	    fillColor: '#f01',
+	    fillOpacity: 0.5,
+	    radius: 500
+	}).addTo(mymap);
+
+	var polygon = L.polygon([
+	    [51.509, -0.08],
+	    [51.503, -0.06],
+	    [51.51, -0.047],
+	    [51.51, -0.1]
+	]).addTo(mymap);
+
+	marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
+	circle.bindPopup("I am a circle.");
+	polygon.bindPopup("I am a polygon.");
+
+	var popup = L.popup()
+	    .setLatLng([51.6, -0.09])
+	    .setContent("I am a standalone popup.")
+	    .addTo(mymap);
+
+
+
+
+</script>
+
+
+</body>
+</html>>
+
+
+
+

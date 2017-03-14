@@ -2,6 +2,7 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.shortcuts import render
 
 
 from linebot import LineBotApi, WebhookParser
@@ -105,3 +106,6 @@ def callback(request):
         return HttpResponse()
     else:
         return HttpResponseBadRequest()
+
+def map(request):
+    return render(request, 'mosquito/map.html')
