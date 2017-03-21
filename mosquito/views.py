@@ -11,7 +11,7 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage, LocationM
 
 from .models import User
 import re, json
-from dengue_data import data
+from .dengue_data import data
 
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
