@@ -10,7 +10,8 @@ from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, LocationMessage
 
 from .models import User
-import re
+import re, json
+from dengue_data import data
 
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
@@ -94,7 +95,7 @@ def callback(request):
                 elif state == 1:
                     reply_text = "請問你的所在地？\n(使用「位置訊息」功能)"
                 elif state == 2:
-                    reply_text = "回報成功！\n"
+                    reply_text = "回報成功！\n(輸入「回報」 可再次回報)"
                 else:
                     reply_text = "嗨，"+profile.display_name+"\n你要回報嗎？\n(輸入「回報」 開始回報)"
 
@@ -108,4 +109,8 @@ def callback(request):
         return HttpResponseBadRequest()
 
 def map(request):
-    return render(request, 'mosquito/map.html')
+    json_addressPoints1 = json.dumps(data(1),ensure_ascii=False)
+    json_addressPoints2 = json.dumps(data(2),ensure_ascii=False)
+#    print(json_addressPoints1)
+#    print(json_addressPoints2)
+    return render(request, 'mosquito/map.html',{'addressPoints1':json_addressPoints1, 'addressPoints2':json_addressPoints2})
