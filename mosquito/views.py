@@ -114,3 +114,4 @@ def map(request):
 #    print(json_addressPoints1)
 #    print(json_addressPoints2)
     return render(request, 'mosquito/map.html',{'addressPoints1':json_addressPoints1, 'addressPoints2':json_addressPoints2})
+
