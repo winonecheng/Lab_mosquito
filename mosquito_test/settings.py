@@ -135,12 +135,7 @@ USE_L10N = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
-<<<<<<< HEAD
-STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
-=======
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
->>>>>>> parent of 597cb60... f
-
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
 STATIC_URL = '/static/'
 
