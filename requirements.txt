@@ -4,3 +4,4 @@ line-bot-sdk==1.1.0
 gunicorn==19.0.0
 psycopg2==2.7.1
 whitenoise==3.3.0
+dj-database-url==0.4.2

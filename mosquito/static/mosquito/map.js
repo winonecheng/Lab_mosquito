@@ -3,7 +3,7 @@ baseMaps = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?acc
     attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
     maxZoom: 18,
     id: 'mapbox.streets',
-    accessToken: 'pk.eyJ1Ijoiam9ubmUyNjAiLCJhIjoiY2owOWFrbHA4MDgyMTJ3cGR3cWVlMm51eiJ9.ezHTsyL9D3-O5Anw6IGRdg'
+    accessToken: 'pk.eyJ1Ijoiam9ubmUyNjAiLCJhIjoiY2owbmFncmdwMDAwMzJxbnZxMm85eDdtYSJ9.WsKUG0wpHZHUJ0oAWJOqLg'
 }).addTo(mymap);
 
 heatmap_points1 = addressPoints[1].map(function (p) { return [p[2], p[1]]; });
