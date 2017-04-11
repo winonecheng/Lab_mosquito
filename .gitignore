@@ -1,3 +1,4 @@
 db.sqlite3
 mosquito_test/settings_secret.py
 local_settings.py
+__pycache__/
