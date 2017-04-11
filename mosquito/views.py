@@ -4,7 +4,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.shortcuts import render
 
-
 from linebot import LineBotApi, WebhookParser
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, LocationMessage
@@ -111,7 +110,5 @@ def callback(request):
 def map(request):
     json_addressPoints1 = json.dumps(data(1),ensure_ascii=False)
     json_addressPoints2 = json.dumps(data(2),ensure_ascii=False)
-#    print(json_addressPoints1)
-#    print(json_addressPoints2)
     return render(request, 'mosquito/map.html',{'addressPoints1':json_addressPoints1, 'addressPoints2':json_addressPoints2})
 
