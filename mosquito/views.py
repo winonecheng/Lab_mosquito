@@ -192,5 +192,6 @@ def callback(request):
 def map(request):
     json_addressPoints1 = json.dumps(data(1),ensure_ascii=False)
     json_addressPoints2 = json.dumps(data(2),ensure_ascii=False)
-    return render(request, 'mosquito/map.html',{'addressPoints1':json_addressPoints1, 'addressPoints2':json_addressPoints2})
+    json_addressPoints3 = json.dumps(data(3),ensure_ascii=False)
+    return render(request, 'mosquito/map.html',{'addressPoints1':json_addressPoints1, 'addressPoints2':json_addressPoints2, 'addressPoints3':json_addressPoints3})
 

@@ -1,4 +1,5 @@
 import re, requests
+from .models import User
 
 def data(n):
     addressPoints = []
@@ -16,6 +17,9 @@ def data(n):
             match = re.search(pat, line)
             if match:
                 addressPoints.append([match.group(2),match.group(1)])
+    elif n==3:
+    	for user in User.objects.all():
+    		addressPoints.append([user.latitude, user.longitude])
     else:
         pass
     return addressPoints

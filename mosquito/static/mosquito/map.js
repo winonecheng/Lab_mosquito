@@ -8,9 +8,11 @@ baseMaps = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?acc
 
 heatmap_points1 = addressPoints[1].map(function (p) { return [p[2], p[1]]; });
 heatmap_points2 = addressPoints[2].map(function (p) { return [p[1], p[0]]; });
+heatmap_points3 = addressPoints[3].map(function (p) { return [p[0], p[1]]; });
 var heat ={
 	"1":L.heatLayer(heatmap_points1,{minOpacity:0.6, radius:20, blur:20}),
-	"2":L.heatLayer(heatmap_points2,{minOpacity:0.6, radius:20, blur:20})
+	"2":L.heatLayer(heatmap_points2,{minOpacity:0.6, radius:20, blur:20}),
+	"3":L.heatLayer(heatmap_points3,{minOpacity:0.6, radius:20, blur:20}),
 };
 var disease ={
 	"1":"登革熱",
@@ -18,7 +20,7 @@ var disease ={
 	"3":"腸病毒"
 };
 
-console.log(addressPoints[2]);
+console.log(addressPoints[3]);
 var now_disease = 1;
 heat[now_disease].addTo(mymap);
 update_other();
