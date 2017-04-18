@@ -58,6 +58,28 @@ def handle_input_of_temperature(id, message):
     else:
         return 0
 
+def handle_input_of_report(id, msg):
+    pattern = [r'登革熱\s*:\s*(\d+)', r'發燒\s*:\s*(\d+)', r'咳嗽\s*:\s*(\d+)']
+    result_report = {'登革熱':0, '發燒':0, '咳嗽':0}
+    for pat, key in zip(pattern, result_report.keys()):
+        match = re.search(pat, msg)
+        if match:
+            result_report[key] = match.group(1)
+        else:
+            result_report[key] = 0
+
+    result_report_text = ""
+    for k, v in result_report.items():
+        result_report_text += (str(k)+" : "+str(v)+" ")
+    return result_report_text
+
+def load_address(id):
+    user = User.objects.get(uid=id)
+    if user.address:
+        return user.address
+    else:
+        return -1
+
 def address_to_lat_lng(address):
     key= "AIzaSyA1ug3pDy-rR6btRx88y-K9znjzRTUeHIE"
     url = "https://maps.googleapis.com/maps/api/geocode/json?address={0}&key={1}&language=zh-TW".format(address, key)
@@ -102,6 +124,40 @@ confirm_address_type = TemplateSendMessage(
     )
 )
 
+confirm_report = TemplateSendMessage(
+    alt_text='Confirm template',
+    template=ConfirmTemplate(
+        text='',
+        actions=[
+            PostbackTemplateAction(
+                label='確認',
+                data='confirm_report_true'
+            ),
+            PostbackTemplateAction(
+                label='取消',
+                data='confirm_report_false'
+            )
+        ]
+    )
+)
+
+confirm_report_address = TemplateSendMessage(
+    alt_text='Confirm template',
+    template=ConfirmTemplate(
+        text='',
+        actions=[
+            PostbackTemplateAction(
+                label='是',
+                data='confirm_report_address_true'
+            ),
+            PostbackTemplateAction(
+                label='否，重新設定',
+                data='confirm_report_address_false'
+            )
+        ]
+    )
+)
+
 button_setting = TemplateSendMessage(
     alt_text='Buttons template',
     template=ButtonsTemplate(
@@ -130,13 +186,28 @@ def handle_text_msg(event):
         if event.message.text == str(INFO_DISEASE):
             pass
         elif event.message.text == str(INFO_ZAPPER):
-            pass
-        elif event.message.text == str(REPROT):
-            update_user_state(profile.user_id, REPROT)
+
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="請問你現在的體溫？\n(ex：27.5度)")
+                TextSendMessage(text="您目前安裝的捕蚊燈比起一週內在這時間中抓到的平均值還高，最近蚊媒風險可能升高，請小心注意！")
             )
+
+        elif event.message.text == str(REPROT):
+            update_user_state(profile.user_id, REPROT)
+            address = load_address(profile.user_id)
+            if address != -1:
+                confirm_report_address.template.text = "診所地址 : "+address
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    confirm_report_address
+                )
+            else:
+                update_user_state(profile.user_id, INITIAL)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="請先至個人資料設定，設定地址！")
+                )
+
         elif event.message.text == str(SETTING):
             update_user_state(profile.user_id, SETTING)
             line_bot_api.reply_message(
@@ -146,7 +217,7 @@ def handle_text_msg(event):
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=profile.display_name+"你好!\n我是台南市的疫情機器人，我提供以下功能：\n\n1 : 即時疫情\n2 : 目前捕蚊燈資訊\n3 : 回報疫情\n4 : 個人資料設定\n\n請輸入對應數字做操作喔！")
+                TextSendMessage(text=profile.display_name+"你好！\n我是台南市的疫情機器人，我提供以下功能：\n\n1 : 即時疫情\n2 : 目前捕蚊燈資訊\n3 : 回報疫情\n4 : 個人資料設定\n\n請輸入對應數字做操作喔！")
             )
 
     elif state == SETTING:
@@ -157,23 +228,15 @@ def handle_text_msg(event):
             confirm_address
         )
 
-        '''
-        format_address = address_to_lat_lng(event.message.text)
-        if format_address != -1:
-            update_user_address(profile.user_id, format_address['formatted_address'], format_address['geometry']['location']['lat'], format_address['geometry']['location']['lng'])
-            update_user_state(profile.user_id, INITIAL)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="成功!")
-            )
-        else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="錯誤!請再次輸入地址!")
-            )
-        '''
-
     elif state == REPROT:
+        result = handle_input_of_report(profile.user_id ,event.message.text)
+        confirm_report.template.text = "回報 : \n"+result
+        line_bot_api.reply_message(
+            event.reply_token,
+            confirm_report
+        )
+
+        '''
         if handle_input_of_temperature(profile.user_id, event.message.text):
             update_user_state(profile.user_id, INITIAL)
             line_bot_api.reply_message(
@@ -185,32 +248,13 @@ def handle_text_msg(event):
                 event.reply_token,
                 TextSendMessage(text="請問你現在的體溫？\n(ex：27.5度)")
             )
+        '''
     else:
         pass
 
-@handler.add(MessageEvent, message=LocationMessage)
-def handle_location_msg(event):
-    profile = line_bot_api.get_profile(event.source.user_id)
-    state = User.objects.get(uid=profile.user_id).state
-    if state == SETTING:
-        confirm_address.alt_text = event.message.address
-        confirm_address.template.text = '新地址 : '+ event.message.address
-        line_bot_api.reply_message(
-            event.reply_token,
-            confirm_address
-        )
-
-        '''
-        update_user_address(profile.user_id, event.message.address, event.message.latitude, event.message.longitude)
-        update_user_state(profile.user_id, INITIAL)
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="成功!")
-        )
-        '''
-
 @handler.add(PostbackEvent)
 def handle_postback_event(event):
+    profile = line_bot_api.get_profile(event.source.user_id)
     if event.postback.data == "function":
         line_bot_api.reply_message(
             event.reply_token,
@@ -230,8 +274,8 @@ def handle_postback_event(event):
         format_address = address_to_lat_lng(confirm_address.alt_text)
         print(confirm_address.alt_text)
         if format_address != -1:
-            update_user_address(event.source.user_id, format_address['formatted_address'], format_address['geometry']['location']['lat'], format_address['geometry']['location']['lng'])
-            update_user_state(event.source.user_id, INITIAL)
+            update_user_address(profile.user_id, format_address['formatted_address'], format_address['geometry']['location']['lat'], format_address['geometry']['location']['lng'])
+            update_user_state(profile.user_id, INITIAL)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="成功!")
@@ -243,14 +287,48 @@ def handle_postback_event(event):
             )
 
     elif event.postback.data == "confirm_address_false":
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="取消設定")
-            )
-            update_user_state(event.source.user_id, INITIAL)
+        update_user_state(profile.user_id, INITIAL)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="取消設定")
+        )
+    elif event.postback.data == "confirm_report_address_true":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="可開始回報！\n(ex. 發燒:2 咳嗽:3 登革熱:1)")
+        )
+    elif event.postback.data == "confirm_report_address_false":
+        update_user_state(profile.user_id, INITIAL)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請輸入4，至個人資料設定，設定地址！")
+        )
+    elif event.postback.data == "confirm_report_true":
+        update_user_state(profile.user_id, INITIAL)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="謝謝！已收到您的回報資訊！")
+        )
+    elif event.postback.data == "confirm_report_false":
+        update_user_state(profile.user_id, INITIAL)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="取消回報")
+        )
     else:
         pass
 
+@handler.add(MessageEvent, message=LocationMessage)
+def handle_location_msg(event):
+    profile = line_bot_api.get_profile(event.source.user_id)
+    state = User.objects.get(uid=profile.user_id).state
+    if state == SETTING:
+        confirm_address.alt_text = event.message.address
+        confirm_address.template.text = '新地址 : '+ event.message.address
+        line_bot_api.reply_message(
+            event.reply_token,
+            confirm_address
+        )
 
 @handler.add(FollowEvent)
 def handle_follow_event(event):
