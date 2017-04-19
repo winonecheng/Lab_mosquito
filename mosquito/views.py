@@ -59,7 +59,7 @@ def handle_input_of_temperature(id, message):
         return 0
 
 def handle_input_of_report(id, msg):
-    pattern = [r'登革熱\s*:\s*(\d+)', r'發燒\s*:\s*(\d+)', r'咳嗽\s*:\s*(\d+)']
+    pattern = [r'登革熱\s*[:：]\s*(\d+)', r'發燒\s*[:：]\s*(\d+)', r'咳嗽\s*[:：]\s*(\d+)']
     result_report = {'登革熱':0, '發燒':0, '咳嗽':0}
     for pat, key in zip(pattern, result_report.keys()):
         match = re.search(pat, msg)
