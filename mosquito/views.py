@@ -9,7 +9,7 @@ from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, LocationMessage, FollowEvent, UnfollowEvent, TemplateSendMessage, PostbackEvent
 from linebot.models.template import ConfirmTemplate, PostbackTemplateAction, ButtonsTemplate, MessageTemplateAction, URITemplateAction
 
-from .models import User
+from .models import User, Dengue
 import re, json, requests
 from .dengue_data import data
 
@@ -90,6 +90,20 @@ def address_to_lat_lng(address):
     else:
         return -1
 
+def lookup_disease(address):
+    print("lookuping...")
+
+    pat = r'.*市?([\u4e00-\u9fa5]+區)'
+    match = re.search(pat, address)
+    return_str =""
+    if match:
+        count = Dengue.objects.filter(address__contains=match.group(1)).count()
+        return_str = "目前"+match.group(1)+"累積病例數\n"+"．登革熱 : "+str(count)
+    else:
+        return_str = "查無此區"
+    return return_str
+
+
 confirm_address = TemplateSendMessage(
     alt_text='Confirm template',
     template=ConfirmTemplate(
@@ -114,11 +128,11 @@ confirm_address_type = TemplateSendMessage(
         actions=[
             PostbackTemplateAction(
                 label='「位置訊息」',
-                data='function'
+                data='confirm_address_type_function'
             ),
             PostbackTemplateAction(
                 label='文字輸入',
-                data='text'
+                data='confirm_address_type_text'
             )
         ]
     )
@@ -166,11 +180,29 @@ button_setting = TemplateSendMessage(
         actions=[
             PostbackTemplateAction(
                 label='地址',
-                data='address'
+                data='button_setting_address'
             ),
             PostbackTemplateAction(
                 label='????',
-                data='temp'
+                data='button_setting_temp'
+            ),
+        ]
+    )
+)
+
+button_info_disease = TemplateSendMessage(
+    alt_text='Buttons template',
+    template=ButtonsTemplate(
+        title='查詢即時疫情',
+        text='選擇要查詢的地區',
+        actions=[
+            PostbackTemplateAction(
+                label='個人設定的地址',
+                data='button_info_disease_address'
+            ),
+            PostbackTemplateAction(
+                label='自行輸入',
+                data='button_info_disease_input'
             ),
         ]
     )
@@ -184,6 +216,11 @@ def handle_text_msg(event):
 
     if state == INITIAL:
         if event.message.text == str(INFO_DISEASE):
+            update_user_state(profile.user_id, INFO_DISEASE)
+            line_bot_api.reply_message(
+                event.reply_token,
+                button_info_disease
+            )
             pass
         elif event.message.text == str(INFO_ZAPPER):
 
@@ -205,7 +242,7 @@ def handle_text_msg(event):
                 update_user_state(profile.user_id, INITIAL)
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="請先至個人資料設定，設定地址！")
+                    TextSendMessage(text="尚未設定地址！\n請輸入4，至個人資料設定，設定地址！")
                 )
 
         elif event.message.text == str(SETTING):
@@ -249,23 +286,36 @@ def handle_text_msg(event):
                 TextSendMessage(text="請問你現在的體溫？\n(ex：27.5度)")
             )
         '''
+
+    elif state == INFO_DISEASE:
+        update_user_state(profile.user_id, INITIAL)
+        return_str = lookup_disease(event.message.text)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=return_str)
+        )
     else:
         pass
 
 @handler.add(PostbackEvent)
 def handle_postback_event(event):
     profile = line_bot_api.get_profile(event.source.user_id)
-    if event.postback.data == "function":
+    if event.postback.data == "confirm_address_type_function":
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="請使用line「位置訊息」功能，公開你的所在位置")
         )
-    elif event.postback.data == "text":
+    elif event.postback.data == "confirm_address_type_text":
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="請直接輸入地址")
         )
-    elif event.postback.data == "address":
+    elif event.postback.data == "confirm_address_type_text_district":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請輸入區名\n(ex. 東區)")
+        )
+    elif event.postback.data == "button_setting_address":
         line_bot_api.reply_message(
             event.reply_token,
             confirm_address_type
@@ -315,6 +365,29 @@ def handle_postback_event(event):
             event.reply_token,
             TextSendMessage(text="取消回報")
         )
+    elif event.postback.data =="button_info_disease_address":
+        address = load_address(profile.user_id)
+        if address != -1:
+            update_user_state(profile.user_id, INITIAL)
+            return_str = lookup_disease(address)
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=return_str)
+            )            
+            
+        else:
+            update_user_state(profile.user_id, INITIAL)
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="尚未設定地址！\n請輸入4，至個人資料設定，設定地址！")
+            )
+    elif event.postback.data =="button_info_disease_input":
+        confirm_address_type.template.actions[1].data = "confirm_address_type_text_district"
+        line_bot_api.reply_message(
+            event.reply_token,
+            confirm_address_type
+        )
+        confirm_address_type.template.actions[1].data = "confirm_address_type_text"
     else:
         pass
 
@@ -329,6 +402,15 @@ def handle_location_msg(event):
             event.reply_token,
             confirm_address
         )
+    elif state == INFO_DISEASE:
+        update_user_state(profile.user_id, INITIAL)
+        return_str = lookup_disease(event.message.address)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=return_str)
+        )   
+    else:
+        pass
 
 @handler.add(FollowEvent)
 def handle_follow_event(event):

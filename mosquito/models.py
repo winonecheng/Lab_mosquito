@@ -19,7 +19,7 @@ class Dengue(models.Model):
     date = models.DateTimeField()
 
     def __str__(self):
-        return self.date
+        return str(self.date)
 
 class Flu(models.Model):
     address = models.CharField(max_length=200)
@@ -28,4 +28,4 @@ class Flu(models.Model):
     date = models.DateTimeField()
 
     def __str__(self):
-        return self.date
+        return str(self.date)
